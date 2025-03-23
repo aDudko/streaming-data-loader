@@ -41,3 +41,19 @@ class ElasticSettings(BaseSettings):
     url: str = "http://elasticsearch:9200"
     index: str = "index_name"
     retry: int = 3
+
+
+class PrometheusSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        str_strip_whitespace=True, env_prefix="prometheus_"
+    )
+
+    port: int = 9090
+
+
+class PushgatewaySettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        str_strip_whitespace=True, env_prefix="pushgateway_"
+    )
+
+    url: str = "http://pushgateway:9091"

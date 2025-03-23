@@ -5,6 +5,7 @@ from aiokafka import AIOKafkaConsumer
 from config import KafkaSettings, get_settings
 from domain.models import EventModel
 from logger import get_logger
+from metrics import consume_time_metric, errors_total
 from services.event_service import process_events
 from utility import Deserializer
 
@@ -34,6 +35,7 @@ class KafkaConsumerService:
                 await asyncio.sleep(3)
         raise ConnectionError("Could not connect to Kafka")
 
+    @consume_time_metric.time
     async def start(self):
         """ Asynchronous reading of messages from Kafka with a waiting """
         consumer = AIOKafkaConsumer(
@@ -54,6 +56,7 @@ class KafkaConsumerService:
                         event = EventModel.event_convert(message.value)
                         events.append(event)
                     else:
+                        errors_total.inc()
                         logger.error(f"Invalid message format: {message.value}")
             if events:
                 await process_events(events)

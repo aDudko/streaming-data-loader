@@ -15,9 +15,9 @@ services:
       elasticsearch:
         condition: service_healthy
       kafka-cluster:
-        condition: service_started
+        condition: service_healthy
     networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
   kafka-cluster:
     image: landoop/fast-data-dev:latest
@@ -34,8 +34,13 @@ services:
       RUNTESTS: 0                 # Disable Running tests so the cluster starts faster
     volumes:
       - "./volumes/kafka/data:/data"
+    healthcheck:
+      test: [ "CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
   elasticsearch:
     image: elasticsearch:${ELK_VERSION:-8.17.2}
@@ -56,7 +61,7 @@ services:
     volumes:
       - "./volumes/elastic/data:/usr/share/elasticsearch/data"
     networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
   prometheus:
     image: prom/prometheus:latest
@@ -65,14 +70,14 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
-      - "./alerts.yml:/etc/prometheus/alerts.yml"
+      - "./configs/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./configs/alerts.yml:/etc/prometheus/alerts.yml"
       - "./volumes/prometheus/data:/prometheus"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
   grafana:
     image: grafana/grafana:latest
@@ -88,7 +93,7 @@ services:
       prometheus:
         condition: service_started
     networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
   node_exporter:
     image: prom/node-exporter:latest
@@ -97,7 +102,7 @@ services:
     ports:
       - "9100:9100"
     networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -114,16 +119,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
-      - loader
-
-  pushgateway:
-    image: prom/pushgateway:latest
-    container_name: pushgateway
-    restart: unless-stopped
-    ports:
-      - "9091:9091"
-    networks:
-      - loader
+      - ${GLOBAL_NETWORK:-loader}
 
 networks:
   loader:

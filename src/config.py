@@ -49,11 +49,3 @@ class PrometheusSettings(BaseSettings):
     )
 
     port: int = 9090
-
-
-class PushgatewaySettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        str_strip_whitespace=True, env_prefix="pushgateway_"
-    )
-
-    url: str = "http://pushgateway:9091"

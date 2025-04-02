@@ -11,11 +11,6 @@ scrape_configs:
     static_configs:
       - targets: ['node_exporter:9100']
 
-  - job_name: 'pushgateway'
-    honor_labels: true
-    static_configs:
-      - targets: ['pushgateway:9091']
-
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['cadvisor:8080']

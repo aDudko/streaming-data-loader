@@ -1,13 +1,12 @@
-from prometheus_client import Counter, Summary, push_to_gateway, CollectorRegistry, start_http_server
+from prometheus_client import Counter, Summary, CollectorRegistry, start_http_server
+from typing import Callable, Optional, Coroutine, Any
 import functools
 import time
 
-from config import PushgatewaySettings, get_settings
 from logger import get_logger
 
 logger = get_logger(__name__)
 
-settings = get_settings(PushgatewaySettings)
 registry = CollectorRegistry()
 
 # Counters
@@ -21,33 +20,35 @@ transform_time_metric = Summary("transform_duration_seconds", "Time spent transf
 batch_processing_time_metric = Summary("batch_processing_duration_seconds", "Time spent processing the entire batch")
 
 
-def counter_metric_decorator(metric: Summary = None, catch_exception: bool = True):
+def start_metrics_server(port: int = 8000):
+    logger.info(f"Starting Prometheus metrics server on port {port}")
+    start_http_server(port)
+
+
+def counter_metric_decorator(
+        metric: Optional[Summary] = None,
+        catch_exception: bool = True
+) -> Callable[[Callable[..., Coroutine[Any, Any, Any]]], Callable[..., Coroutine[Any, Any, Any]]]:
     """ Decorator for counting processed messages, errors and execution time """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Coroutine[Any, Any, Any]]) -> Callable[..., Coroutine[Any, Any, Any]]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        async def async_wrapper(*args, **kwargs) -> Any:
             start_time = time.time()
             try:
-                result = func(*args, **kwargs)
-                messages_processed.inc()
+                result = await func(*args, **kwargs)
                 return result
             except Exception as e:
                 errors_total.inc()
                 if catch_exception:
                     raise e
-                else:
-                    logger.error(f"Error in {func.__name__}: {e}")
+                logger.error(f"Error in {func.__name__}: {e}")
                 raise e
             finally:
                 if metric:
                     duration = time.time() - start_time
                     metric.observe(duration)
 
-        return wrapper
+        return async_wrapper
 
     return decorator
-
-
-push_to_gateway(settings.url, job='streaming-data-loader', registry=registry)
-start_http_server(8000)

@@ -84,6 +84,7 @@ This project is built on a port-to-adapter architecture (`Hexagonal Architecture
 
 ```
 streaming-data-loader/
+├── configs/
 ├── src/                            # project sources
 │   ├── domain/                     # models definition
 │   ├── ports/
@@ -92,10 +93,9 @@ streaming-data-loader/
 │   ├── services/                   # processing logic
 │   ├── config.py
 │   ├── logger.py
-│   ├── metrics.py                  # metrics collection and monitoring
-│   └── utility.py
+│   └── metrics.py                  # metrics collection and monitoring
 ├── tests/
-├── compose.yml                     # docker-compose file
+├── docker-compose.yml
 ├── Dockerfile
 ├── main.py
 └── pyproject.toml                  # requirements
@@ -124,6 +124,9 @@ The project now includes comprehensive monitoring and observability features:
   - `transform_duration_seconds`: Time spent transforming messages.
   - `batch_processing_duration_seconds`: Time spent processing the entire batch.
 
-## Author:
+---
 
-Anatoly Dudko
+## ✍️ Author
+
+**Anatoly Dudko**  
+[GitHub @aDudko](https://github.com/aDudko) • [LinkedIn](https://www.linkedin.com/in/dudko-anatol/)

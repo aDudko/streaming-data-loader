@@ -1,11 +1,12 @@
 import asyncio
+from time import time
 from http import HTTPStatus
 
 from elasticsearch import AsyncElasticsearch, helpers
 
-from config import ElasticSettings, get_settings
+from config import ElasticSettings
 from logger import get_logger
-from metrics import response_time_metric, messages_processed, errors_total
+from metrics import response_time_metric, messages_processed, errors_total, batch_processing_time_metric
 
 logger = get_logger(__name__)
 
@@ -29,47 +30,52 @@ class ElasticsearchClientService:
             await asyncio.sleep(3)
         raise ConnectionError("Could not connect to Elasticsearch")
 
-    @response_time_metric.time
+    @response_time_metric.time()
     async def bulk_insert(self, events: list):
         """ Adds a stack of documents to Elasticsearch via Bulk API with retraces """
         if not events:
             return
 
+        start_time = time()
+
         attempts = 0
-        while attempts < self.retry and events:
-            operations = [
-                {"_index": self.index, "_source": event}
-                for event in events
-            ]
+        try:
+            while attempts < self.retry and events:
+                operations = [
+                    {"_index": self.index, "_source": event}
+                    for event in events
+                ]
 
-            try:
-                success, failed_items = await helpers.async_bulk(self.client, operations, raise_on_error=False)
-                failed_docs = []
+                try:
+                    success, failed_items = await helpers.async_bulk(self.client, operations, raise_on_error=False)
+                    failed_docs = []
 
-                for i, item in enumerate(failed_items):
-                    if "index" in item and item["index"].get("status") not in (HTTPStatus.OK, HTTPStatus.CREATED):
-                        messages_processed.inc()
+                    for i, item in enumerate(failed_items):
+                        if "index" in item and item["index"].get("status") not in (HTTPStatus.OK, HTTPStatus.CREATED):
+                            failed_docs.append(events[i])
+                        else:
+                            messages_processed.inc()
+
+                    if not failed_docs:
+                        logger.info(f"Successfully inserted {len(events)} documents.")
+                        return
                     else:
-                        failed_docs.append(events[i])
+                        logger.warning(f"{len(failed_docs)} documents failed. Retrying...")
+                        events = failed_docs  # Keep only the failed documents
+                        attempts += 1
+                        batch_processing_time_metric.inc()
+                        await asyncio.sleep(2)
 
-                if not failed_docs:
-                    logger.info(f"Successfully inserted {len(events)} documents.")
-                    return
-                else:
-                    logger.warning(f"{len(failed_docs)} documents failed. Retrying...")
-                    events = failed_docs  # Keep only the failed documents
-                    attempts += 1
+                except Exception as e:
+                    logger.error(f"Bulk insert failed on attempt {attempts + 1}: {e}")
                     await asyncio.sleep(2)
 
-            except Exception as e:
-                logger.error(f"Bulk insert failed on attempt {attempts + 1}: {e}")
-                await asyncio.sleep(2)
+            if events:
+                logger.error(f"Could not insert {len(events)} documents after {self.retry} attempts.")
+                for doc in events:
+                    errors_total.inc()
+                    logger.error(f"Failed document: {doc}")
 
-        if events:
-            logger.error(f"Could not insert {len(events)} documents after {self.retry} attempts.")
-            for doc in events:
-                errors_total.inc()
-                logger.error(f"Failed document: {doc}")
-
-
-elasticsearch_client = ElasticsearchClientService(get_settings(ElasticSettings))
+        finally:
+            duration = time() - start_time
+            response_time_metric.observe(duration)

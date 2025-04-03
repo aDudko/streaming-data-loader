@@ -52,13 +52,13 @@ docker-compose up --build
 #### Step 1 — Deploy
 
 ```bash
-./deploy.sh
+./k8s-deploy.sh
 ```
 
 #### Step 2 — Cleanup
 
 ```bash
-./clean.sh
+./k8s-clean.sh
 ```
 
 ---

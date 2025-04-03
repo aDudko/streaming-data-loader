@@ -17,6 +17,13 @@ spec:
           image: anatolydudko/streaming-data-loader:latest
           ports:
             - containerPort: 8000
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           env:
             - name: ELASTIC_URL
               value: http://elasticsearch:9200

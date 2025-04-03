@@ -88,3 +88,6 @@ venv/
 .vscode/
 
 /volumes/
+log-analyzer.py
+logs.txt
+log_report.pdf

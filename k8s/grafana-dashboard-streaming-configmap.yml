@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-streaming
+data:
+  streaming-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "title": "Streaming Data Loader",
+      "panels": [
+        {
+          "title": "Messages Processed",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "messages_processed_total",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Errors Total",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "errors_total",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "title": "Consume Duration (avg)",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg(consume_duration_seconds)",
+              "refId": "C"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 30,
+      "version": 1,
+      "refresh": "10s"
+    }

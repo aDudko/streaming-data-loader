@@ -1,132 +1,167 @@
 # Streaming Data Loader
 
-## Overview
-
-Streaming Data Loader is a tool for efficiently loading and processing streaming data from Kafka into Elasticsearch. The
-project implements asynchronous message processing, provides fault tolerance, and uses batch insertion of data into the
-repository. With the addition of observability, the project now includes detailed monitoring and metrics collection to
-ensure high availability and performance.
-
-### Key features of the  project:
-
-This project is an asynchronous data loader from Kafka to Elasticsearch, providing stable processing of data streams
-with high performance and comprehensive monitoring.
-
-### Main features:
-
-- **Asynchronous**: Using `asyncio`, `aiokafka` and `aiohttp` minimizes data processing latency.
-- **Configuration flexibility**: Uses `pydantic-settings`, allowing easy customization of settings via `.env`.
-- **Reliable data processing**: Supports batch loading, retries on failures, and error logging.
-- **Scalability**: Support for Kafka `consumer groups` for distributed data processing.
-- **Docker integration**: Can be deployed via `docker-compose`.
-- **Observability**: Integrated with `Prometheus` and `Grafana` for real-time monitoring and alerting.
-
-### Differences from analogs:
-
-- **Minimal processing latency**
-    - Most similar solutions process data in streaming mode, but do not always use asyncio.
-    - Here, all operations are asynchronous, which reduces blocking and increases throughput.
-
-- **Flexible and easy to customize**
-    - Unlike heavyweight ETL solutions (Logstash, Flume), this project does not require complex customization and is
-      easy to adapt.
-
-- **Automatic repetition of operations in case of failures**
-    - Kafka and Elasticsearch often experience temporary failures.
-    - This service includes multiple connection attempts and reinsertion mechanisms when failures occur.
-
-- **Logging and debugging**
-    - A logging system (`python-json-logger`) is built in, making it easy to monitor and analyze performance.
-
-- **Comprehensive monitoring**
-    - Integrated with Prometheus for metrics collection and Grafana for visualization.
-    - Provides detailed insights into system performance and health.
-
-## Technologies
-
-- `Python` v3.12
-- `Kafka` message broker
-- `Elasticsearch` data warehouse
-- `aiokafka` asynchronous Kafka client
-- `aiohttp` asynchronous HTTP client
-- `pydantic` data validation
-- `poetry` dependency management
-- `Prometheus` metrics collection 
-- `Grafana` metrics visualization
-
-## Architecture
-
-This project is built on a port-to-adapter architecture (`Hexagonal Architecture`), providing flexibility and scalability.
-
-### Overview of the architecture
-
-- **Input Ports** - Kafka
-    - Messages from Kafka are read by the asynchronous Kafka Consumer (`aiokafka`).
-    - Batch processing is used to improve performance.
-    - Supports deserialization of data before processing.
-
-- **Business Logic** - Application Core
-    - Apply data models (Pydantic) for validation and event transformation.
-    - All data processing takes place in an asynchronous event processing service (event_service).
-    - Flexibility of customization is provided through pydantic-settings.
-
-- **Output Ports** - Elasticsearch
-    - Asynchronous Elasticsearch client (`elasticsearch-py`) is used.
-    - Records are inserted into the index in batches (`Bulk API`), which increases loading speed.
-    - Built-in retry on connection failures.
-
-- **Infrastructure Layer** - Docker and Logging
-    - Docker-compose manages the startup of all services (Kafka, Elasticsearch, Streaming Data Loader).
-    - Logging (`python-json-logger`) for detailed analysis of service performance.
-    - Monitoring (`Prometheus` and `Grafana`) for real-time metrics visualization and alerting.
-
-## Structure of the project
-
-```
-streaming-data-loader/
-├── configs/
-├── src/                            # project sources
-│   ├── domain/                     # models definition
-│   ├── ports/
-│   │   ├── input                   # application input ports
-│   │   └── output                  # application output ports
-│   ├── services/                   # processing logic
-│   ├── config.py
-│   ├── logger.py
-│   └── metrics.py                  # metrics collection and monitoring
-├── tests/
-├── docker-compose.yml
-├── Dockerfile
-├── main.py
-└── pyproject.toml                  # requirements
-```
-
-### Main components
-
-- **KafkaConsumerService** - responsible for reading messages from Kafka, deserializing them, and passing them to the
-  event service.
-- **ElasticsearchClientService** - provides connection to Elasticsearch, as well as batch insertion of data with error
-  handling.
-- **EventModel** - converts input events before loading them into Elasticsearch.
-- **MetricsService** - collects and exposes metrics for monitoring system performance and health.
-
-## Monitoring and Observability
-
-The project now includes comprehensive monitoring and observability features:
-
-- **Prometheus**: Collects metrics from the application, including message processing rates, error counts, and processing times.
-- **Grafana**: Provides dashboards for visualizing metrics and setting up alerts.
-- **Metrics**: Key metrics include:
-  - `messages_processed_total`: Total number of processed messages. 
-  - `errors_total`: Total number of errors encountered. 
-  - `consume_duration_seconds`: Time spent consuming messages. 
-  - `response_duration_seconds`: Time spent to response. 
-  - `transform_duration_seconds`: Time spent transforming messages.
-  - `batch_processing_duration_seconds`: Time spent processing the entire batch.
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org)
+[![Kafka](https://img.shields.io/badge/Kafka-Streaming-red)](https://kafka.apache.org/)
+[![Elasticsearch](https://img.shields.io/badge/Elasticsearch-Search-yellow)](https://www.elastic.co/elasticsearch/)
+[![Prometheus](https://img.shields.io/badge/Monitoring-Prometheus-orange)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Dashboards-Grafana-brightgreen)](https://grafana.com/)
+[![AsyncIO](https://img.shields.io/badge/Async-Enabled-lightgrey)](https://docs.python.org/3/library/asyncio.html)
+[![CI](https://img.shields.io/badge/Tests-Pytest-green)](https://docs.pytest.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/K8s-Supported-blueviolet)](https://kubernetes.io/)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
 ---
 
-## ✍️ Author
+## Overview
+
+**Streaming Data Loader** is a high-performance, async-powered microservice for processing data streams from **Kafka**
+and bulk-loading them into **Elasticsearch**. It combines modern Python tooling with observability best practices to
+provide **reliable, scalable, and debuggable data pipelines**.
+
+It’s fast, resilient, and production-ready — ideal for those who need lightweight alternatives to complex ETL systems.
+
+---
+
+## Key Features
+
+- **Asynchronous processing** with `asyncio`, `aiokafka`, and `aiohttp`
+- **Batch insertions** for throughput efficiency
+- **Retry & fault-tolerant** logic for Kafka and Elasticsearch
+- **Configurable** via `.env` and `pydantic-settings`
+- **Docker & Kubernetes ready**
+- **Prometheus + Grafana** monitoring included
+- **Tested** with `pytest`, including integration scenarios
+
+---
+
+## Quick Start
+
+### 🐳 Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+- http://localhost:9090 → Prometheus
+- http://localhost:3000 → Grafana (admin / admin)
+- http://localhost:8080 → Kafka UI
+
+### ☸️ Kubernetes
+
+#### Step 1 — Deploy
+
+```bash
+./deploy.sh
+```
+
+#### Step 2 — Cleanup
+
+```bash
+./clean.sh
+```
+
+---
+
+## Architecture
+
+This project uses **Hexagonal Architecture** (Ports and Adapters), ensuring modularity, extensibility, and clean separation of concerns.
+
+```text
+Kafka -→ KafkaConsumerService -→ EventService -→ ElasticsearchClientService -→ Elasticsearch
+                         │                ↓
+                         └-→ Metrics + Logging (Prometheus + JSON logs)
+```
+
+### Layers
+
+- **Input Ports**: Kafka Consumer (aiokafka), deserialization, batching
+- **Application Core**: Event transformation, validation, retry logic
+- **Output Ports**: Async Elasticsearch client, bulk insert, failure handling
+- **Infrastructure**: Docker, Kubernetes, logging, metrics, monitoring
+
+---
+
+## 🔍 Why Choose This Over Logstash, Flume, etc.?
+
+- ✅ **True async** data pipeline — lower latency, better throughput
+- ✅ **No heavyweight config DSL** — Python code, `pyproject.toml`, `.env`
+- ✅ **Built-in retries & fault handling** — robust out of the box
+- ✅ **JSON logging** and metric labeling for full observability
+- ✅ **Open-source & customizable** — perfect for modern data teams
+
+---
+
+## Observability
+
+Prometheus scrapes metrics on `/metrics` (port `8000`). Dashboards are automatically provisioned in Grafana.
+
+| Metric                              | Description                        |
+|-------------------------------------|------------------------------------|
+| `messages_processed_total`          | Total number of processed messages |
+| `errors_total`                      | Total errors during processing     |
+| `consume_duration_seconds`          | Time spent reading from Kafka      |
+| `response_duration_seconds`         | Time to insert into Elasticsearch  |
+| `transform_duration_seconds`        | Time spent transforming messages   |
+| `batch_processing_duration_seconds` | Full batch processing time         |
+
+---
+
+## Testing
+
+```bash
+pytest -v
+```
+
+Includes:
+
+- ✅ Unit tests
+- ✅ Integration tests (Kafka → ES)
+- ✅ Metrics verification
+- ✅ Config validation
+
+---
+
+## Technologies
+
+- `Python 3.12` + `asyncio`
+- `Kafka + aiokafka`
+- `Elasticsearch` `Bulk API`
+- `Pydantic` `dotenv` `poetry`
+- `Prometheus` `Grafana`
+- `Docker` `docker-compose`
+- `Kubernetes-ready`
+- JSON logging (`python-json-logger`)
+
+---
+
+## Project Structure
+
+```text
+streaming-data-loader/
+├── configs/                     # Prometheus / Grafana
+├── src/                         # Main source code
+│   ├── domain/
+│   ├── ports/
+│   ├── services/                # Event processing logic
+│   ├── config.py                # Settings & env config
+│   ├── logger.py                # JSON logger setup
+│   └── metrics.py               # Prometheus metrics
+├── tests/                       # Unit & integration tests
+├── k8s/                         # Kubernetes manifests
+├── docker-compose.yml
+├── Dockerfile
+├── deploy.sh / clean.sh
+└── pyproject.toml
+```
+
+---
+
+## If you find this useful...
+
+...give it a star, fork it, or mention it in your next data project!
+
+## Author
 
 **Anatoly Dudko**  
 [GitHub @aDudko](https://github.com/aDudko) • [LinkedIn](https://www.linkedin.com/in/dudko-anatol/)

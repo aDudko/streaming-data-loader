@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streaming-data-loader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streaming-data-loader
+  template:
+    metadata:
+      labels:
+        app: streaming-data-loader
+    spec:
+      containers:
+        - name: streaming-data-loader
+          image: anatolydudko/streaming-data-loader:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ELASTIC_URL
+              value: http://elasticsearch:9200
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: streaming-data-loader
+spec:
+  selector:
+    app: streaming-data-loader
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

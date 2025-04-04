@@ -5,43 +5,87 @@ metadata:
 data:
   streaming-dashboard.json: |
     {
-      "annotations": {
-        "list": []
-      },
-      "title": "Streaming Data Loader",
+      "id": null,
+      "title": "Streaming Data Loader Metrics",
+      "tags": [ "kafka", "elasticsearch", "prometheus" ],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "5s",
       "panels": [
         {
-          "title": "Messages Processed",
           "type": "stat",
+          "title": "Processed Messages",
+          "id": 1,
+          "datasource": "Prometheus",
           "targets": [
             {
               "expr": "messages_processed_total",
-              "refId": "A"
+              "legendFormat": "Processed"
             }
           ]
         },
         {
-          "title": "Errors Total",
           "type": "stat",
+          "title": "Errors",
+          "id": 2,
+          "datasource": "Prometheus",
           "targets": [
             {
               "expr": "errors_total",
-              "refId": "B"
+              "legendFormat": "Errors"
             }
           ]
         },
         {
-          "title": "Consume Duration (avg)",
-          "type": "stat",
+          "type": "graph",
+          "title": "Kafka Consume Duration",
+          "id": 3,
+          "datasource": "Prometheus",
           "targets": [
             {
-              "expr": "avg(consume_duration_seconds)",
-              "refId": "C"
+              "expr": "consume_duration_seconds",
+              "legendFormat": "Consume Time",
+              "interval": ""
+            }
+          ]
+        },
+        {
+          "type": "graph",
+          "title": "Elasticsearch Response Duration",
+          "id": 4,
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "response_duration_seconds",
+              "legendFormat": "Response Time"
+            }
+          ]
+        },
+        {
+          "type": "graph",
+          "title": "Batch Processing Duration",
+          "id": 5,
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "batch_processing_duration_seconds",
+              "legendFormat": "Batch Time"
+            }
+          ]
+        },
+        {
+          "type": "graph",
+          "title": "Transform Duration",
+          "id": 6,
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "transform_duration_seconds",
+              "legendFormat": "Transform Time"
             }
           ]
         }
-      ],
-      "schemaVersion": 30,
-      "version": 1,
-      "refresh": "10s"
+      ]
     }
+    
